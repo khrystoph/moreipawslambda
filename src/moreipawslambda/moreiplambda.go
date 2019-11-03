@@ -10,7 +10,7 @@ import (
 
 //Handler is needed to be called by lambda
 func handleRequest(ctx context.Context, req events.ALBTargetGroupRequest) (events.ALBTargetGroupResponse, error) {
-	responseBody := req.Headers["x-forwarded-for"]
+	responseBody := req.Headers["x-forwarded-for"] + "\n"
 	response := events.ALBTargetGroupResponse{Body: responseBody, StatusCode: 200, IsBase64Encoded: false, StatusDescription: "200 OK", Headers: map[string]string{}}
 	response.Headers["Content-Type"] = "text/html; charset=utf-8"
 	fmt.Printf("Request: %v\n", req)
