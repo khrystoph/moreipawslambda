@@ -31,7 +31,14 @@ var (
 		Bucket: aws.String(s3bucketname),
 		Key:    aws.String(bucketKey),
 	}
+	listObjectsInput = &s3.ListObjectsV2Input{
+		Bucket: aws.String(s3bucketname),
+	}
 )
+
+func init() {
+	sess = session.Must(session.NewSession(awsConfig))
+}
 
 //handleRequest is needed to be called by lambda
 func handleRequest(ctx context.Context, req events.ALBTargetGroupRequest) (events.ALBTargetGroupResponse, error) {
@@ -66,7 +73,9 @@ func createBase64Image() (image string, err error) {
 		fmt.Printf("Unable to pull image. Error message:\n%s", err)
 		return "", err
 	}
+	fmt.Println("converting to base64")
 	image, err = convertBase64(s3ImageObject)
+	fmt.Println("returning image to main function")
 	return image, err
 }
 
@@ -74,6 +83,7 @@ func convertBase64(s3Image *s3.GetObjectOutput) (encodedString string, err error
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(s3Image.Body)
 	encodedString = base64.StdEncoding.EncodeToString(buf.Bytes())
+	fmt.Printf("%v\n", encodedString)
 	return encodedString, nil
 }
 
@@ -83,9 +93,24 @@ func pullImage() (*s3.GetObjectOutput, error) {
 		fmt.Println("Error creating session.")
 		return nil, err
 	}
-	s3svc := s3.New(sess, awsConfig)
+
+	_, err = sess.Config.Credentials.Get()
+	if err != nil {
+		fmt.Println("Error msg: ", err)
+		return nil, err
+	}
+
+	fmt.Printf("listObjectV2Input:\n%v\n", *listObjectsInput)
+
+	listObjectsResult, err := s3.New(sess).ListObjectsV2(listObjectsInput)
+	if err != nil {
+		fmt.Printf("error calling list objects:%v\n", err)
+	}
+	fmt.Printf("List Objects Output:%v", *listObjectsResult)
+
 	fmt.Printf("getObjectInput:\n%v\n", *getObjectInput)
-	result, err := s3svc.GetObject(getObjectInput)
+	result, err := s3.New(sess).GetObject(getObjectInput)
+	fmt.Println("checking for errors from GetObject.")
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -101,6 +126,7 @@ func pullImage() (*s3.GetObjectOutput, error) {
 		}
 		return result, err
 	}
+	fmt.Printf("returning result from GetObject\n")
 	return result, nil
 }
 
