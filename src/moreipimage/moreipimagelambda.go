@@ -94,20 +94,6 @@ func pullImage() (*s3.GetObjectOutput, error) {
 		return nil, err
 	}
 
-	_, err = sess.Config.Credentials.Get()
-	if err != nil {
-		fmt.Println("Error msg: ", err)
-		return nil, err
-	}
-
-	fmt.Printf("listObjectV2Input:\n%v\n", *listObjectsInput)
-
-	listObjectsResult, err := s3.New(sess).ListObjectsV2(listObjectsInput)
-	if err != nil {
-		fmt.Printf("error calling list objects:%v\n", err)
-	}
-	fmt.Printf("List Objects Output:%v", *listObjectsResult)
-
 	fmt.Printf("getObjectInput:\n%v\n", *getObjectInput)
 	result, err := s3.New(sess).GetObject(getObjectInput)
 	fmt.Println("checking for errors from GetObject.")
